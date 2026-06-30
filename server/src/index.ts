@@ -1,24 +1,26 @@
-import express from 'express'
-import { createServer } from 'http'
-import { Server } from 'socket.io'
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import dotenv from "dotenv";
 
-const app = express()
-const httpServer = createServer(app)
-const io = new Server(httpServer)
+dotenv.config();
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 
-const PORT = process.env.PORT ?? 3001
+const PORT = process.env.PORT ?? 3001;
 
-app.get('/health', (_req, res) => {
-  res.json({ ok: true })
-})
+app.get("/health", (_req, res) => {
+    res.json({ ok: true });
+});
 
-io.on('connection', (socket) => {
-  console.log('client connected:', socket.id)
-  socket.on('disconnect', () => {
-    console.log('client disconnected:', socket.id)
-  })
-})
+io.on("connection", (socket) => {
+    console.log("client connected:", socket.id);
+    socket.on("disconnect", () => {
+        console.log("client disconnected:", socket.id);
+    });
+});
 
 httpServer.listen(PORT, () => {
-  console.log(`server listening on :${PORT}`)
-})
+    console.log(`server listening on :${PORT}`);
+});

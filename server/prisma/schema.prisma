@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -11,3 +6,69 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Spotify users: OAuth only, no password
+model SpotifyUser {
+  id                    String    @id  // Spotify's own user ID
+  displayName           String
+  email                 String?   @unique
+  refreshTokenEncrypted String?
+  lastSeen              DateTime  @default(now())
+  createdAt             DateTime  @default(now())
+}
+
+// Apple/guest users: local auth
+model AppleUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   // bcrypt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  playlists    Playlist[]
+  resetTokens  ResetToken[]
+}
+
+model Playlist {
+  id              String   @id @default(cuid())
+  ownerAppleUserId String
+  sourceUrl       String
+  name            String
+  lastSyncedAt    DateTime?
+  createdAt       DateTime @default(now())
+
+  owner  AppleUser @relation(fields: [ownerAppleUserId], references: [id])
+  tracks Track[]
+}
+
+model ResetToken {
+  id          String   @id @default(cuid())
+  appleUserId String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  user AppleUser @relation(fields: [appleUserId], references: [id])
+}
+
+model Track {
+  id            String   @id @default(cuid())
+  playlistId    String
+  position      Int
+  appleSongUrl  String
+  itunesTrackId Int
+  title         String
+  artist        String
+  album         String
+  artworkUrl    String   // 100x100bb — swap suffix at render for larger sizes
+  durationMs    Int
+  isStreamable  Boolean  @default(true)
+  spotifyTrackId  String?
+  playlist Playlist @relation(fields: [playlistId], references: [id])
+
+  @@unique([playlistId, position])
+  @@index([itunesTrackId])
+  @@index([spotifyTrackId])
+}
+
