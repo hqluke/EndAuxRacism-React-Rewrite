@@ -9,7 +9,8 @@ datasource db {
 
 // Spotify users: OAuth only, no password
 model SpotifyUser {
-  id                    String    @id  // Spotify's own user ID
+  id                    String    @id @default(cuid()) // internal id: use this in session, not spotifyId
+  spotifyId             String    @unique // Spotify's own user ID
   displayName           String
   email                 String?   @unique
   refreshTokenEncrypted String?

@@ -1,12 +1,27 @@
 import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import dotenv from "dotenv";
+import authRouter from "./routes/auth";
+import spotifyRouter from "./routes/spotify";
+import { sessionMiddleware } from "./session";
 
-dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
+
+app.use(
+    cors({
+        origin: process.env.FRONT_END_URL,
+        credentials: true,
+    }),
+);
+app.use(express.json());
+app.use(cookieParser());
+app.use(sessionMiddleware);
+app.use(authRouter);
+app.use(spotifyRouter);
 
 const PORT = process.env.PORT ?? 3001;
 
