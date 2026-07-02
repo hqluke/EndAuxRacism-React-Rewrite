@@ -2,7 +2,8 @@ import { Router } from "express";
 import crypto from "crypto";
 import { prisma } from "../db";
 import { encrypt } from "../lib/encryption";
-import bcrypt from "bcrypt-ts";
+// bcrypt-ts has only named exports
+import { hash, compare } from "bcrypt-ts";
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.post("/register", async (req, res) => {
             });
         }
 
-        const hashed = await bcrypt.hash(password, 12);
+        const hashed = await hash(password, 12);
 
         const user = await prisma.appleUser.create({
             data: {
@@ -73,6 +74,7 @@ router.post("/register", async (req, res) => {
                 .status(409)
                 .json({ error: "Email already has an account" });
         }
+        console.error("register failed:", e);
         res.status(500).json({ error: "Signup failed" });
     }
 });
@@ -96,7 +98,7 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Invalid email or password" });
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await compare(password, user.passwordHash);
 
     if (!valid) {
         return res.status(400).json({ error: "Invalid email or password" });
@@ -114,7 +116,7 @@ router.post("/login", async (req, res) => {
 // Returns the logged-in user for the current session, or 401 if none.
 // The client can't read session data itself (connect.sid is httpOnly and
 // only points at a row server-side), so it calls this on load to hydrate.
-router.get("/auth/me", async (req, res) => {
+router.get("/me", async (req, res) => {
     if (!req.session.userId || !req.session.provider) {
         return res.status(401).json({ error: "Not logged in" });
     }
@@ -128,7 +130,7 @@ router.get("/auth/me", async (req, res) => {
             user: {
                 id: user.id,
                 provider: "spotify",
-                displayName: user.displayName,
+                username: user.displayName,
                 email: user.email,
             },
         });
@@ -198,7 +200,7 @@ router.get("/spotify/login", (_req, res) => {
     res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
 });
 
-router.get("/auth/spotify/callback", async (req, res) => {
+router.get("/spotify/callback", async (req, res) => {
     // Verify state and code verifier
     const { code, state } = req.query;
     const savedState = req.cookies.spotify_oauth_state;

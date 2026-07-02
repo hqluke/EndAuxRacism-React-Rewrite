@@ -20,7 +20,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(sessionMiddleware);
-app.use(authRouter);
+app.use("/auth", authRouter);
 app.use(spotifyRouter);
 
 const PORT = process.env.PORT ?? 3001;
